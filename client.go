@@ -197,32 +197,36 @@ func (c *httpClient) GetCookies(u *url.URL) []*http.Cookie {
 func (c *httpClient) SetCookies(u *url.URL, cookies []*http.Cookie) {
 	c.logger.Info(fmt.Sprintf("set cookies for url: %s", u.String()))
 
-	var filteredCookies []*http.Cookie
-
 	if c.Jar == nil {
 		c.logger.Warn("you did not setup a cookie jar")
 		return
 	}
 
-	existingCookies := c.Jar.Cookies(u)
+	var filteredCookies []*http.Cookie
 
-	for _, cookie := range cookies {
-		alreadyInJar := false
+	if c.config.skipExistingCookie {
+		existingCookies := c.Jar.Cookies(u)
 
-		for _, existingCookie := range existingCookies {
-			alreadyInJar = cookie.Name == existingCookie.Name
+		for _, cookie := range cookies {
+			alreadyInJar := false
+
+			for _, existingCookie := range existingCookies {
+				alreadyInJar = cookie.Name == existingCookie.Name
+
+				if alreadyInJar {
+					break
+				}
+			}
 
 			if alreadyInJar {
-				break
+				c.logger.Debug("cookie %s is already in jar", cookie.Name)
+				continue
 			}
-		}
 
-		if alreadyInJar {
-			c.logger.Debug("cookie %s is already in jar", cookie.Name)
-			continue
+			filteredCookies = append(filteredCookies, cookie)
 		}
-
-		filteredCookies = append(filteredCookies, cookie)
+	} else {
+		filteredCookies = cookies
 	}
 
 	c.Jar.SetCookies(u, filteredCookies)
