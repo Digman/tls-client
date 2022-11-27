@@ -83,10 +83,10 @@ Please open an issue on this github repository. In the best case you provide the
 ### Installation
 
 ```go
-go get -u github.com/bogdanfinn/tls-client
+go get -u github.com/Digman/tls-client
 
 // or specific version:
-// go get github.com/bogdanfinn/tls-client@v0.5.2
+// go get github.com/Digman/tls-client@v0.5.2
 ```
 Some users have trouble when using `go get -u`. If this is the case for you please cleanup your go.mod file and do a `go get` with a specific version.
 
@@ -104,7 +104,7 @@ import (
 
 	http "github.com/bogdanfinn/fhttp"
     "github.com/bogdanfinn/fhttp/cookiejar"
-	tls_client "github.com/bogdanfinn/tls-client"
+	tls_client "github.com/Digman/tls-client"
 )
 
 func main() {
@@ -192,14 +192,14 @@ I highly recommend to take a look at this repository, when you want to use this 
 A NodeJS example on how to load and call the functionality can be found in `cffi_dist/example_node`. Please be aware that you need to run `npm install` to install the node dependencies.
 
 The basic logic behind the shared library is, that you pass all required information in a JSON string to the shared lib function which then creates the client, the request and the request data out of it and forwards the request.
-For more documentation on this JSON string please take a look at: https://github.com/bogdanfinn/tls-client-api
+For more documentation on this JSON string please take a look at: https://github.com/Digman/tls-client-api
 
 ### Further Information
 
 This library uses the following api: https://tls.peet.ws/api/all to verify the hashes and fingerprints for akamai and
 ja3. Be aware that also peets api does not show every extension/cipher a tls client is using. Do not rely just on ja3 strings.
 
-If you are not using go and do not want to implement the shared library but want to use the functionality check out this repository https://github.com/bogdanfinn/tls-client-api
+If you are not using go and do not want to implement the shared library but want to use the functionality check out this repository https://github.com/Digman/tls-client-api
 
 ### Frequently Asked Questions / Errors
 * **I receive PROTOCOL_ERROR on POST Request**
@@ -208,7 +208,7 @@ This is a very generic error and can have many root causes. Most likely users of
 
 * **This client fails when I test on www.google.com**
 
-Please check this issue for explanation: https://github.com/bogdanfinn/tls-client/issues/6. Should be fixed since 0.8.3
+Please check this issue for explanation: https://github.com/Digman/tls-client/issues/6. Should be fixed since 0.8.3
  
 * **I'm receiving `tls: error decoding message` when using this TLS Client.**
 

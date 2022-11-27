@@ -1,4 +1,4 @@
-module github.com/bogdanfinn/tls-client
+module github.com/Digman/tls-client
 
 go 1.18
 
