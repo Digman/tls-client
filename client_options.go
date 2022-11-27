@@ -1,6 +1,7 @@
 package tls_client
 
 import (
+	"github.com/bogdanfinn/fhttp/cookiejar"
 	"time"
 
 	http "github.com/bogdanfinn/fhttp"
@@ -29,6 +30,7 @@ type httpClientConfig struct {
 	cookieJar                   http.CookieJar
 	clientProfile               ClientProfile
 	withRandomTlsExtensionOrder bool
+	skipExistingCookie          bool
 	timeout                     time.Duration
 }
 
@@ -40,6 +42,13 @@ func WithProxyUrl(proxyUrl string) HttpClientOption {
 
 func WithCookieJar(jar http.CookieJar) HttpClientOption {
 	return func(config *httpClientConfig) {
+		config.cookieJar = jar
+	}
+}
+
+func WithNewCookieJar() HttpClientOption {
+	return func(config *httpClientConfig) {
+		jar, _ := cookiejar.New(nil)
 		config.cookieJar = jar
 	}
 }
@@ -83,6 +92,12 @@ func WithInsecureSkipVerify() HttpClientOption {
 func WithClientProfile(clientProfile ClientProfile) HttpClientOption {
 	return func(config *httpClientConfig) {
 		config.clientProfile = clientProfile
+	}
+}
+
+func WithSkipExistingCookie() HttpClientOption {
+	return func(config *httpClientConfig) {
+		config.skipExistingCookie = true
 	}
 }
 

@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
+	tls_client "github.com/Digman/tls-client"
+	"github.com/Digman/tls-client/shared"
 	http "github.com/bogdanfinn/fhttp"
 	"github.com/bogdanfinn/fhttp/cookiejar"
 	"github.com/bogdanfinn/fhttp/http2"
-	tls_client "github.com/bogdanfinn/tls-client"
-	"github.com/bogdanfinn/tls-client/shared"
 	tls "github.com/bogdanfinn/utls"
 	"github.com/google/uuid"
 )
@@ -78,9 +78,9 @@ func requestToppsAsChrome107Client() {
 	options := []tls_client.HttpClientOption{
 		tls_client.WithTimeout(30),
 		tls_client.WithClientProfile(tls_client.Chrome_107),
-		//tls_client.WithProxyUrl("http://user:pass@host:port"),
-		//tls_client.WithNotFollowRedirects(),
-		//tls_client.WithInsecureSkipVerify(),
+		// tls_client.WithProxyUrl("http://user:pass@host:port"),
+		// tls_client.WithNotFollowRedirects(),
+		// tls_client.WithInsecureSkipVerify(),
 		tls_client.WithCookieJar(cJar), // create cookieJar instance and pass it as argument
 	}
 

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/url"
 
+	tls_client_cffi_src "github.com/Digman/tls-client/cffi_src"
 	http "github.com/bogdanfinn/fhttp"
-	tls_client_cffi_src "github.com/bogdanfinn/tls-client/cffi_src"
 )
 
 //export freeAll

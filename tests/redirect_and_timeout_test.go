@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
+	tls_client "github.com/Digman/tls-client"
 	http "github.com/bogdanfinn/fhttp"
 	"github.com/bogdanfinn/fhttp/httptest"
-	tls_client "github.com/bogdanfinn/tls-client"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,7 +102,7 @@ func TestClient_TestFailWithTimeout(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	redirectEndpoint := fmt.Sprintf("%s%s", testServer.URL, "/timeout")
 
 	req, err := http.NewRequest(http.MethodGet, redirectEndpoint, nil)
