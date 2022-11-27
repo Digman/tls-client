@@ -3,7 +3,6 @@ module github.com/Digman/tls-client
 go 1.18
 
 require (
-	github.com/Digman/tls-client v1.0.1
 	github.com/bogdanfinn/fhttp v0.5.9
 	github.com/bogdanfinn/utls v1.5.9
 	github.com/google/uuid v1.3.0
