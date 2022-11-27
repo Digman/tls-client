@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"unsafe"
 
+	tls_client_cffi_src "github.com/Digman/tls-client/cffi_src"
 	http "github.com/bogdanfinn/fhttp"
-	tls_client_cffi_src "github.com/bogdanfinn/tls-client/cffi_src"
 )
 
 //export freeAll

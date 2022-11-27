@@ -5,9 +5,9 @@ import (
 	"net/url"
 	"testing"
 
+	tls_client "github.com/Digman/tls-client"
 	http "github.com/bogdanfinn/fhttp"
 	"github.com/bogdanfinn/fhttp/cookiejar"
-	tls_client "github.com/bogdanfinn/tls-client"
 	"github.com/stretchr/testify/assert"
 )
 

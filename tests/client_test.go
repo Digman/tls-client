@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	tls_client "github.com/Digman/tls-client"
+	"github.com/Digman/tls-client/shared"
 	http "github.com/bogdanfinn/fhttp"
-	tls_client "github.com/bogdanfinn/tls-client"
-	"github.com/bogdanfinn/tls-client/shared"
 	tls "github.com/bogdanfinn/utls"
 )
 
