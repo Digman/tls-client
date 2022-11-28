@@ -32,6 +32,7 @@ type httpClientConfig struct {
 	withRandomTlsExtensionOrder bool
 	skipExistingCookie          bool
 	timeout                     time.Duration
+	requestTimeout              time.Duration
 }
 
 func WithProxyUrl(proxyUrl string) HttpClientOption {
@@ -56,6 +57,12 @@ func WithNewCookieJar() HttpClientOption {
 func WithTimeout(timeout int) HttpClientOption {
 	return func(config *httpClientConfig) {
 		config.timeout = time.Second * time.Duration(timeout)
+	}
+}
+
+func WithRequestTimeout(timeout int) HttpClientOption {
+	return func(config *httpClientConfig) {
+		config.requestTimeout = time.Millisecond * time.Duration(timeout)
 	}
 }
 

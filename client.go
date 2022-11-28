@@ -119,7 +119,7 @@ func buildFromConfig(config *httpClientConfig) (*http.Client, ClientProfile, err
 	clientProfile := config.clientProfile
 
 	client := &http.Client{
-		Timeout:       config.timeout,
+		Timeout:       config.requestTimeout,
 		Transport:     newRoundTripper(clientProfile, config.transportOptions, config.serverNameOverwrite, config.insecureSkipVerify, config.withRandomTlsExtensionOrder, dialer),
 		CheckRedirect: redirectFunc,
 	}
