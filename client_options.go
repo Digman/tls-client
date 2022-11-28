@@ -54,15 +54,15 @@ func WithNewCookieJar() HttpClientOption {
 	}
 }
 
-func WithTimeout(timeout int) HttpClientOption {
+func WithTimeout(seconds int) HttpClientOption {
 	return func(config *httpClientConfig) {
-		config.timeout = time.Second * time.Duration(timeout)
+		config.timeout = time.Second * time.Duration(seconds)
 	}
 }
 
-func WithRequestTimeout(timeout int) HttpClientOption {
+func WithRequestTimeout(milliSeconds int) HttpClientOption {
 	return func(config *httpClientConfig) {
-		config.requestTimeout = time.Millisecond * time.Duration(timeout)
+		config.requestTimeout = time.Millisecond * time.Duration(milliSeconds)
 	}
 }
 
