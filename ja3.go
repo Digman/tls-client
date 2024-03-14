@@ -163,17 +163,16 @@ func getExtensionBaseMap() map[uint16]tls.TLSExtension {
 		// tls.ExtensionCompressCertificate:  &tls.UtlsCompressCertExtension{...},
 		// tls.ExtensionSupportedVersions: &tls.SupportedVersionsExtension{...}
 		// tls.ExtensionKeyShare:     &tls.KeyShareExtension{...},
+		// tls.ExtensionDelegatedCredentials: &tls.DelegatedCredentialsExtension{},
+		// tls.ExtensionALPN: &tls.ALPNExtension{},
+		// tls.ExtensionALPS:         &tls.ApplicationSettingsExtension{},
 
-		tls.ExtensionALPN: &tls.ALPNExtension{
-			AlpnProtocols: []string{"h2", "http/1.1"},
-		},
 		tls.ExtensionSCT:                  &tls.SCTExtension{},
 		tls.ExtensionPadding:              &tls.UtlsPaddingExtension{GetPaddingLen: tls.BoringPaddingStyle},
-		tls.ExtensionExtendedMasterSecret: &tls.UtlsExtendedMasterSecretExtension{},
+		tls.ExtensionExtendedMasterSecret: &tls.ExtendedMasterSecretExtension{},
 		tls.ExtensionRecordSizeLimit:      &tls.FakeRecordSizeLimitExtension{},
-		tls.ExtensionDelegatedCredentials: &tls.DelegatedCredentialsExtension{},
 		tls.ExtensionSessionTicket:        &tls.SessionTicketExtension{},
-		tls.ExtensionPreSharedKey:         &tls.PreSharedKeyExtension{},
+		tls.ExtensionPreSharedKey:         &tls.UtlsPreSharedKeyExtension{},
 		tls.ExtensionEarlyData:            &tls.GenericExtension{Id: tls.ExtensionEarlyData},
 		tls.ExtensionCookie:               &tls.CookieExtension{},
 		tls.ExtensionPSKModes: &tls.PSKKeyExchangeModesExtension{
@@ -181,7 +180,6 @@ func getExtensionBaseMap() map[uint16]tls.TLSExtension {
 				tls.PskModeDHE,
 			}},
 		tls.ExtensionNextProtoNeg: &tls.NPNExtension{},
-		tls.ExtensionALPS:         &tls.ApplicationSettingsExtension{},
 		tls.ExtensionRenegotiationInfo: &tls.RenegotiationInfoExtension{
 			Renegotiation: tls.RenegotiateOnceAsClient,
 		},
