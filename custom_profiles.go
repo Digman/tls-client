@@ -229,9 +229,9 @@ var NikeIosMobile = ClientProfile{
 				Extensions: []tls.TLSExtension{
 					&tls.UtlsGREASEExtension{},
 					&tls.SNIExtension{},
-					&tls.UtlsExtendedMasterSecretExtension{},
+					&tls.ExtendedMasterSecretExtension{},
 					&tls.RenegotiationInfoExtension{Renegotiation: tls.RenegotiateOnceAsClient},
-					&tls.SupportedCurvesExtension{[]tls.CurveID{
+					&tls.SupportedCurvesExtension{Curves: []tls.CurveID{
 						tls.CurveID(tls.GREASE_PLACEHOLDER),
 						tls.X25519,
 						tls.CurveP256,
@@ -257,19 +257,19 @@ var NikeIosMobile = ClientProfile{
 						tls.PKCS1WithSHA1,
 					}},
 					&tls.SCTExtension{},
-					&tls.KeyShareExtension{[]tls.KeyShare{
+					&tls.KeyShareExtension{KeyShares: []tls.KeyShare{
 						{Group: tls.CurveID(tls.GREASE_PLACEHOLDER), Data: []byte{0}},
 						{Group: tls.X25519},
 					}},
-					&tls.PSKKeyExchangeModesExtension{[]uint8{
+					&tls.PSKKeyExchangeModesExtension{Modes: []uint8{
 						tls.PskModeDHE,
 					}},
-					&tls.SupportedVersionsExtension{[]uint16{
+					&tls.SupportedVersionsExtension{Versions: []uint16{
 						tls.GREASE_PLACEHOLDER,
 						tls.VersionTLS13,
 						tls.VersionTLS12,
 					}},
-					&tls.UtlsCompressCertExtension{[]tls.CertCompressionAlgo{
+					&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
 						tls.CertCompressionZlib,
 					}},
 					&tls.UtlsGREASEExtension{},
@@ -330,9 +330,9 @@ var NikeAndroidMobile = ClientProfile{
 				},
 				Extensions: []tls.TLSExtension{
 					&tls.SNIExtension{},
-					&tls.UtlsExtendedMasterSecretExtension{},
+					&tls.ExtendedMasterSecretExtension{},
 					&tls.RenegotiationInfoExtension{Renegotiation: tls.RenegotiateOnceAsClient},
-					&tls.SupportedCurvesExtension{[]tls.CurveID{
+					&tls.SupportedCurvesExtension{Curves: []tls.CurveID{
 						tls.X25519,
 						tls.CurveP256,
 						tls.CurveP384,
@@ -354,14 +354,14 @@ var NikeAndroidMobile = ClientProfile{
 						tls.PKCS1WithSHA512,
 						tls.PKCS1WithSHA1,
 					}},
-					&tls.KeyShareExtension{[]tls.KeyShare{
+					&tls.KeyShareExtension{KeyShares: []tls.KeyShare{
 						{Group: tls.CurveID(tls.GREASE_PLACEHOLDER), Data: []byte{0}},
 						{Group: tls.X25519},
 					}},
-					&tls.PSKKeyExchangeModesExtension{[]uint8{
+					&tls.PSKKeyExchangeModesExtension{Modes: []uint8{
 						tls.PskModeDHE,
 					}},
-					&tls.SupportedVersionsExtension{[]uint16{
+					&tls.SupportedVersionsExtension{Versions: []uint16{
 						tls.VersionTLS13,
 						tls.VersionTLS12,
 					}},
@@ -393,11 +393,6 @@ var NikeAndroidMobile = ClientProfile{
 	connectionFlow: 15663105,
 }
 
-/*
-				 771,49171-49172-49161-49162-255,0-11-10-35-16-22-23-13,23
-[JA3 Fullstring: 771,49171-49172-49161-49162-255,0-11-10-35-16-22-23-13,23,0-1-2]
-[JA3: 1ba298e44112a4d4c91800ebaa6ccd2f]
-*/
 var CloudflareCustom = ClientProfile{
 	clientHelloId: tls.ClientHelloID{
 		Client:  "CloudflareCustom",
@@ -417,18 +412,19 @@ var CloudflareCustom = ClientProfile{
 				},
 				Extensions: []tls.TLSExtension{
 					&tls.SNIExtension{},
-					&tls.SupportedPointsExtension{[]uint8{
+					&tls.SupportedPointsExtension{SupportedPoints: []uint8{
 						tls.PointFormatUncompressed,
 						1, // ansiX962_compressed_prime
 						2, // ansiX962_compressed_char2
 					}},
-					&tls.SupportedCurvesExtension{[]tls.CurveID{
-						tls.CurveP256,
+					&tls.SupportedCurvesExtension{Curves: []tls.CurveID{
+						tls.CurveID(0x0017),
 					}},
 					&tls.SessionTicketExtension{},
+					// due to that we do not care about http2 frame settings
 					&tls.ALPNExtension{AlpnProtocols: []string{"http/1.1"}},
 					&tls.GenericExtension{Id: 22}, // encrypt_then_mac
-					&tls.UtlsExtendedMasterSecretExtension{},
+					&tls.ExtendedMasterSecretExtension{},
 					&tls.SignatureAlgorithmsExtension{SupportedSignatureAlgorithms: []tls.SignatureScheme{
 						tls.ECDSAWithP256AndSHA256,
 						tls.ECDSAWithP384AndSHA384,
@@ -438,15 +434,18 @@ var CloudflareCustom = ClientProfile{
 						0x0809,
 						0x080a,
 						0x080b,
-						0x0804,
+						tls.PSSWithSHA256,
 						tls.PSSWithSHA384,
 						tls.PSSWithSHA512,
 						tls.PKCS1WithSHA256,
 						tls.PKCS1WithSHA384,
 						tls.PKCS1WithSHA512,
 						0x0303,
+						0x0203,
 						0x0301,
+						0x0201,
 						0x0302,
+						0x0202,
 						0x0402,
 						0x0502,
 						0x0602,
@@ -456,7 +455,7 @@ var CloudflareCustom = ClientProfile{
 		},
 	},
 
-	//actually the h2 settings are not relevant, because this client does only support http1
+	// actually the h2 settings are not relevant, because this client does only support http1
 	settings: map[http2.SettingID]uint32{
 		http2.SettingHeaderTableSize:      4096,
 		http2.SettingMaxConcurrentStreams: math.MaxUint32,
