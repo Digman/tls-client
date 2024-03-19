@@ -20,8 +20,8 @@ var MappedTLSClients = map[string]ClientProfile{
 	"chrome_110":             Chrome_110,
 	"chrome_111":             Chrome_111,
 	"chrome_112":             Chrome_112,
-	"chrome_114":             Chrome_114,
-	"chrome_115":             Chrome_115,
+	"chrome_113":             Chrome_113,
+	"chrome_116":             Chrome_116,
 	"chrome_117":             Chrome_117,
 	"chrome_120":             Chrome_120,
 	"safari_15_6_1":          Safari_15_6_1,
@@ -269,8 +269,8 @@ var Chrome_120 = ClientProfile{
 	connectionFlow: 15663105,
 }
 
-var Chrome_114 = ClientProfile{
-	clientHelloId: tls.HelloChrome_114_Padding_PSK,
+var Chrome_113 = ClientProfile{
+	clientHelloId: tls.HelloChrome_112_PSK,
 	settings: map[http2.SettingID]uint32{
 		http2.SettingHeaderTableSize:      65536,
 		http2.SettingEnablePush:           0,
@@ -294,7 +294,7 @@ var Chrome_114 = ClientProfile{
 	connectionFlow: 15663105,
 }
 
-var Chrome_115 = ClientProfile{
+var Chrome_116 = ClientProfile{
 	clientHelloId: tls.HelloChrome_115_PQ_PSK,
 	settings: map[http2.SettingID]uint32{
 		http2.SettingHeaderTableSize:      65536,
