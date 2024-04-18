@@ -28,6 +28,7 @@ var MappedTLSClients = map[string]ClientProfile{
 	"safari_ios_15_5":        Safari_IOS_15_5,
 	"safari_ios_15_6":        Safari_IOS_15_6,
 	"safari_ios_16_0":        Safari_IOS_16_0,
+	"safari_ios_17_0":        Safari_IOS_17_0,
 	"firefox_102":            Firefox_102,
 	"firefox_104":            Firefox_104,
 	"firefox_105":            Firefox_105,
@@ -615,6 +616,27 @@ var Safari_Ipad_15_6 = ClientProfile{
 		http2.SettingMaxConcurrentStreams: 100,
 	},
 	settingsOrder: []http2.SettingID{
+		http2.SettingInitialWindowSize,
+		http2.SettingMaxConcurrentStreams,
+	},
+	pseudoHeaderOrder: []string{
+		":method",
+		":scheme",
+		":path",
+		":authority",
+	},
+	connectionFlow: 10485760,
+}
+
+var Safari_IOS_17_0 = ClientProfile{
+	clientHelloId: tls.HelloIOS_16_0,
+	settings: map[http2.SettingID]uint32{
+		http2.SettingEnablePush:           0,
+		http2.SettingInitialWindowSize:    2097152,
+		http2.SettingMaxConcurrentStreams: 100,
+	},
+	settingsOrder: []http2.SettingID{
+		http2.SettingEnablePush,
 		http2.SettingInitialWindowSize,
 		http2.SettingMaxConcurrentStreams,
 	},
