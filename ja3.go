@@ -9,7 +9,12 @@ import (
 	tls "github.com/bogdanfinn/utls"
 )
 
-func GetSpecFactoryFromJa3String(ja3String string, supportedSignatureAlgorithms, supportedVersions, keyShareCurves []string, certCompressionAlgo string) (func() (tls.ClientHelloSpec, error), error) {
+type CandidateCipherSuites struct {
+	KdfId  string
+	AeadId string
+}
+
+func GetSpecFactoryFromJa3String(ja3String string, supportedSignatureAlgorithms, supportedDelegatedCredentialsAlgorithms, supportedVersions, keyShareCurves, supportedProtocolsALPN, supportedProtocolsALPS []string, echCandidateCipherSuites []CandidateCipherSuites, candidatePayloads []uint16, certCompressionAlgo string) (func() (tls.ClientHelloSpec, error), error) {
 	return func() (tls.ClientHelloSpec, error) {
 		var mappedSignatureAlgorithms []tls.SignatureScheme
 
@@ -25,6 +30,52 @@ func GetSpecFactoryFromJa3String(ja3String string, supportedSignatureAlgorithms,
 				}
 
 				mappedSignatureAlgorithms = append(mappedSignatureAlgorithms, tls.SignatureScheme(uint16(supportedSignatureAlgorithmAsUint)))
+			}
+		}
+
+		var mappedDelegatedCredentialsAlgorithms []tls.SignatureScheme
+
+		for _, supportedDelegatedCredentialsAlgorithm := range supportedDelegatedCredentialsAlgorithms {
+			delegatedCredentialsAlgorithm, ok := delegatedCredentialsAlgorithms[supportedDelegatedCredentialsAlgorithm]
+			if ok {
+				mappedDelegatedCredentialsAlgorithms = append(mappedDelegatedCredentialsAlgorithms, delegatedCredentialsAlgorithm)
+			} else {
+				supportedDelegatedCredentialsAlgorithmAsUint, err := strconv.ParseUint(supportedDelegatedCredentialsAlgorithm, 16, 16)
+
+				if err != nil {
+					return tls.ClientHelloSpec{}, fmt.Errorf("%s is not a valid supportedDelegatedCredentialsAlgorithm", supportedDelegatedCredentialsAlgorithm)
+				}
+
+				mappedDelegatedCredentialsAlgorithms = append(mappedDelegatedCredentialsAlgorithms, tls.SignatureScheme(uint16(supportedDelegatedCredentialsAlgorithmAsUint)))
+			}
+		}
+
+		var mappedHpkeSymmetricCipherSuites []tls.HPKESymmetricCipherSuite
+
+		for _, echCandidateCipherSuites := range echCandidateCipherSuites {
+			kdfId, ok1 := kdfIds[echCandidateCipherSuites.KdfId]
+
+			aeadId, ok2 := aeadIds[echCandidateCipherSuites.AeadId]
+			if ok1 && ok2 {
+				mappedHpkeSymmetricCipherSuites = append(mappedHpkeSymmetricCipherSuites, tls.HPKESymmetricCipherSuite{
+					KdfId:  kdfId,
+					AeadId: aeadId,
+				})
+			} else {
+				kdfId, err := strconv.ParseUint(echCandidateCipherSuites.KdfId, 16, 16)
+				if err != nil {
+					return tls.ClientHelloSpec{}, fmt.Errorf("%s is not a valid KdfId", echCandidateCipherSuites.KdfId)
+				}
+
+				aeadId, err := strconv.ParseUint(echCandidateCipherSuites.AeadId, 16, 16)
+				if err != nil {
+					return tls.ClientHelloSpec{}, fmt.Errorf("%s is not a valid aeadId", echCandidateCipherSuites.AeadId)
+				}
+
+				mappedHpkeSymmetricCipherSuites = append(mappedHpkeSymmetricCipherSuites, tls.HPKESymmetricCipherSuite{
+					KdfId:  uint16(kdfId),
+					AeadId: uint16(aeadId),
+				})
 			}
 		}
 
@@ -58,14 +109,14 @@ func GetSpecFactoryFromJa3String(ja3String string, supportedSignatureAlgorithms,
 		compressionAlgo, ok := certCompression[certCompressionAlgo]
 
 		if !ok {
-			return stringToSpec(ja3String, mappedSignatureAlgorithms, mappedTlsVersions, mappedKeyShares, nil)
+			return stringToSpec(ja3String, mappedSignatureAlgorithms, mappedDelegatedCredentialsAlgorithms, mappedTlsVersions, mappedKeyShares, mappedHpkeSymmetricCipherSuites, candidatePayloads, supportedProtocolsALPN, supportedProtocolsALPS, nil)
 		}
 
-		return stringToSpec(ja3String, mappedSignatureAlgorithms, mappedTlsVersions, mappedKeyShares, &compressionAlgo)
+		return stringToSpec(ja3String, mappedSignatureAlgorithms, mappedDelegatedCredentialsAlgorithms, mappedTlsVersions, mappedKeyShares, mappedHpkeSymmetricCipherSuites, candidatePayloads, supportedProtocolsALPN, supportedProtocolsALPS, &compressionAlgo)
 	}, nil
 }
 
-func stringToSpec(ja3 string, signatureAlgorithms []tls.SignatureScheme, tlsVersions []uint16, keyShares []tls.KeyShare, certCompression *tls.CertCompressionAlgo) (tls.ClientHelloSpec, error) {
+func stringToSpec(ja3 string, signatureAlgorithms []tls.SignatureScheme, delegatedCredentialsAlgorithms []tls.SignatureScheme, tlsVersions []uint16, keyShares []tls.KeyShare, hpkeSymmetricCipherSuites []tls.HPKESymmetricCipherSuite, candidatePayloads []uint16, supportedProtocolsALPN, supportedProtocolsALPS []string, certCompression *tls.CertCompressionAlgo) (tls.ClientHelloSpec, error) {
 	extMap := getExtensionBaseMap()
 	ja3StringParts := strings.Split(ja3, ",")
 
@@ -113,9 +164,25 @@ func stringToSpec(ja3 string, signatureAlgorithms []tls.SignatureScheme, tlsVers
 
 	extMap[tls.ExtensionKeyShare] = &tls.KeyShareExtension{KeyShares: keyShares}
 	extMap[tls.ExtensionSupportedPoints] = &tls.SupportedPointsExtension{SupportedPoints: targetPointFormats}
+	extMap[tls.ExtensionECH] = &tls.GREASEEncryptedClientHelloExtension{
+		CandidateCipherSuites: hpkeSymmetricCipherSuites,
+		CandidatePayloadLens:  candidatePayloads,
+	}
 	extMap[tls.ExtensionSupportedVersions] = &tls.SupportedVersionsExtension{Versions: tlsVersions}
 	extMap[tls.ExtensionSignatureAlgorithms] = &tls.SignatureAlgorithmsExtension{
 		SupportedSignatureAlgorithms: signatureAlgorithms,
+	}
+
+	extMap[tls.ExtensionDelegatedCredentials] = &tls.DelegatedCredentialsExtension{
+		SupportedSignatureAlgorithms: delegatedCredentialsAlgorithms,
+	}
+
+	extMap[tls.ExtensionALPN] = &tls.ALPNExtension{
+		AlpnProtocols: supportedProtocolsALPN,
+	}
+
+	extMap[tls.ExtensionALPS] = &tls.ApplicationSettingsExtension{
+		SupportedProtocols: supportedProtocolsALPS,
 	}
 
 	var exts []tls.TLSExtension
