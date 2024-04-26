@@ -205,10 +205,10 @@ var Chrome_120 = ClientProfile{
 				Extensions: []tls.TLSExtension{
 					&tls.UtlsGREASEExtension{},
 					&tls.SNIExtension{},
-					&tls.PSKKeyExchangeModesExtension{[]uint8{
+					&tls.PSKKeyExchangeModesExtension{Modes: []uint8{
 						tls.PskModeDHE,
 					}},
-					&tls.SupportedVersionsExtension{[]uint16{
+					&tls.SupportedVersionsExtension{Versions: []uint16{
 						tls.GREASE_PLACEHOLDER,
 						tls.VersionTLS13,
 						tls.VersionTLS12,
@@ -230,11 +230,11 @@ var Chrome_120 = ClientProfile{
 					&tls.ALPNExtension{AlpnProtocols: []string{"h2", "http/1.1"}},
 					tls.BoringGREASEECH(),
 					&tls.SCTExtension{},
-					&tls.KeyShareExtension{[]tls.KeyShare{
+					&tls.KeyShareExtension{KeyShares: []tls.KeyShare{
 						{Group: tls.CurveID(tls.GREASE_PLACEHOLDER), Data: []byte{0}},
 						{Group: tls.X25519},
 					}},
-					&tls.SupportedCurvesExtension{[]tls.CurveID{
+					&tls.SupportedCurvesExtension{Curves: []tls.CurveID{
 						tls.GREASE_PLACEHOLDER,
 						tls.X25519,
 						tls.CurveP256,
@@ -244,7 +244,7 @@ var Chrome_120 = ClientProfile{
 						tls.PointFormatUncompressed,
 					}},
 					&tls.ApplicationSettingsExtension{SupportedProtocols: []string{"h2"}},
-					&tls.UtlsCompressCertExtension{[]tls.CertCompressionAlgo{
+					&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
 						tls.CertCompressionBrotli,
 					}},
 					&tls.UtlsGREASEExtension{},
