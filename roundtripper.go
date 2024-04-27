@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bogdanfinn/tls-client/profiles"
+	"github.com/Digman/tls-client/profiles"
 
 	http "github.com/bogdanfinn/fhttp"
 	"github.com/bogdanfinn/fhttp/http2"
