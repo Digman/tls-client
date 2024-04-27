@@ -99,6 +99,14 @@ func WithCookieJar(jar http.CookieJar) HttpClientOption {
 	}
 }
 
+// WithIdleTimeoutSeconds configures an HTTP client to use the specified idle timeout.
+func WithIdleTimeoutSeconds(timeout int) HttpClientOption {
+	return func(config *httpClientConfig) {
+		duration := time.Second * time.Duration(timeout)
+		config.transportOptions.IdleConnTimeout = &duration
+	}
+}
+
 // WithTimeoutMilliseconds configures an HTTP client to use the specified request timeout.
 //
 // timeout is the request timeout in milliseconds.

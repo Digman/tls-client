@@ -71,6 +71,7 @@ func NewHttpClient(logger Logger, options ...HttpClientOption) (HttpClient, erro
 		defaultHeaders:     make(http.Header),
 		clientProfile:      profiles.DefaultClientProfile,
 		timeout:            time.Duration(DefaultTimeoutSeconds) * time.Second,
+		transportOptions:   &TransportOptions{},
 	}
 
 	for _, opt := range options {
