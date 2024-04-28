@@ -32,6 +32,31 @@ func NewChromeProfile(clientHelloId tls.ClientHelloID) ClientProfile {
 	}
 }
 
+func NewChromeProfileNonStreams(clientHelloId tls.ClientHelloID) ClientProfile {
+	return ClientProfile{
+		clientHelloId: clientHelloId,
+		settings: map[http2.SettingID]uint32{
+			http2.SettingHeaderTableSize:   65536,
+			http2.SettingEnablePush:        0,
+			http2.SettingInitialWindowSize: 6291456,
+			http2.SettingMaxHeaderListSize: 262144,
+		},
+		settingsOrder: []http2.SettingID{
+			http2.SettingHeaderTableSize,
+			http2.SettingEnablePush,
+			http2.SettingInitialWindowSize,
+			http2.SettingMaxHeaderListSize,
+		},
+		pseudoHeaderOrder: []string{
+			":method",
+			":authority",
+			":scheme",
+			":path",
+		},
+		connectionFlow: 15663105,
+	}
+}
+
 var Chrome_112_PSK = NewChromeProfile(tls.HelloChrome_112_PSK)
 
 var Chrome_114_PSK = NewChromeProfile(tls.HelloChrome_114_Padding_PSK)
@@ -40,7 +65,7 @@ var Chrome_115_PQ = NewChromeProfile(tls.HelloChrome_115_PQ)
 
 var Chrome_115_PSK = NewChromeProfile(tls.HelloChrome_115_PQ_PSK)
 
-var Chrome_117_PSK = NewChromeProfile(tls.ClientHelloID{
+var Chrome_117_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 	Client:               "Chrome",
 	RandomExtensionOrder: false,
 	Version:              "117_PSK",
@@ -120,7 +145,7 @@ var Chrome_117_PSK = NewChromeProfile(tls.ClientHelloID{
 	},
 })
 
-var Chrome_120_PSK = NewChromeProfile(tls.ClientHelloID{
+var Chrome_120_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 	Client:               "Chrome",
 	RandomExtensionOrder: false,
 	Version:              "120_PSK",
