@@ -178,10 +178,12 @@ var Chrome_120_PSK = NewChromeProfile(tls.ClientHelloID{
 				&tls.SCTExtension{},
 				&tls.KeyShareExtension{KeyShares: []tls.KeyShare{
 					{Group: tls.CurveID(tls.GREASE_PLACEHOLDER), Data: []byte{0}},
+					{Group: tls.X25519Kyber768Draft00},
 					{Group: tls.X25519},
 				}},
 				&tls.SupportedCurvesExtension{Curves: []tls.CurveID{
 					tls.GREASE_PLACEHOLDER,
+					tls.X25519Kyber768Draft00,
 					tls.X25519,
 					tls.CurveP256,
 					tls.CurveP384,
