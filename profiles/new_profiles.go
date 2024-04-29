@@ -61,10 +61,6 @@ var Chrome_112_PSK = NewChromeProfile(tls.HelloChrome_112_PSK)
 
 var Chrome_114_PSK = NewChromeProfile(tls.HelloChrome_114_Padding_PSK)
 
-var Chrome_115_PQ = NewChromeProfile(tls.HelloChrome_115_PQ)
-
-var Chrome_115_PSK = NewChromeProfile(tls.HelloChrome_115_PQ_PSK)
-
 var Chrome_117_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 	Client:               "Chrome",
 	RandomExtensionOrder: false,
