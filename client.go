@@ -180,6 +180,11 @@ func (c *httpClient) SetTimeout(duration time.Duration) {
 	c.config.timeout = duration
 }
 
+// GetTimeout get client timeout duration
+func (c *httpClient) GetTimeout() time.Duration {
+	return c.config.timeout
+}
+
 func (c *httpClient) applyFollowRedirect() {
 	if c.config.followRedirects {
 		c.logger.Debug("automatic redirect following is enabled")
