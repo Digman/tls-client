@@ -31,6 +31,8 @@ type HttpClient interface {
 	SetFollowRedirect(followRedirect bool)
 	GetFollowRedirect() bool
 	CloseIdleConnections()
+	SetTimeout(duration time.Duration)
+	GetTimeout() time.Duration
 	Do(req *http.Request) (*http.Response, error)
 	Get(url string) (resp *http.Response, err error)
 	Head(url string) (resp *http.Response, err error)
