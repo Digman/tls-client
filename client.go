@@ -175,6 +175,11 @@ func (c *httpClient) GetFollowRedirect() bool {
 	return c.config.followRedirects
 }
 
+// SetTimeout set client timeout duration
+func (c *httpClient) SetTimeout(duration time.Duration) {
+	c.config.timeout = duration
+}
+
 func (c *httpClient) applyFollowRedirect() {
 	if c.config.followRedirects {
 		c.logger.Debug("automatic redirect following is enabled")
