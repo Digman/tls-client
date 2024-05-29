@@ -31,8 +31,6 @@ type HttpClient interface {
 	SetFollowRedirect(followRedirect bool)
 	GetFollowRedirect() bool
 	CloseIdleConnections()
-	SetTimeout(duration time.Duration)
-	GetTimeout() time.Duration
 	Do(req *http.Request) (*http.Response, error)
 	Get(url string) (resp *http.Response, err error)
 	Head(url string) (resp *http.Response, err error)
@@ -175,16 +173,6 @@ func (c *httpClient) SetFollowRedirect(followRedirect bool) {
 // GetFollowRedirect returns the client's HTTP redirect following policy.
 func (c *httpClient) GetFollowRedirect() bool {
 	return c.config.followRedirects
-}
-
-// SetTimeout set client timeout duration
-func (c *httpClient) SetTimeout(duration time.Duration) {
-	c.config.timeout = duration
-}
-
-// GetTimeout get client timeout duration
-func (c *httpClient) GetTimeout() time.Duration {
-	return c.config.timeout
 }
 
 func (c *httpClient) applyFollowRedirect() {
