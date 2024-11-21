@@ -23,6 +23,8 @@ var MappedTLSClients = map[string]ClientProfile{
 	"chrome_117":             Chrome_117,
 	"chrome_120":             Chrome_120,
 	"chrome_124":             Chrome_124,
+	"chrome_131":             Chrome_131,
+	"chrome_131_PSK":         Chrome_131_PSK,
 	"safari_15_6_1":          Safari_15_6_1,
 	"safari_16_0":            Safari_16_0,
 	"safari_ipad_15_6":       Safari_Ipad_15_6,
@@ -40,6 +42,7 @@ var MappedTLSClients = map[string]ClientProfile{
 	"firefox_117":            Firefox_117,
 	"firefox_120":            Firefox_120,
 	"firefox_123":            Firefox_123,
+	"firefox_132":            Firefox_132,
 	"opera_89":               Opera_89,
 	"opera_90":               Opera_90,
 	"opera_91":               Opera_91,
@@ -71,12 +74,12 @@ var MappedTLSClients = map[string]ClientProfile{
 
 type ClientProfile struct {
 	clientHelloId     tls.ClientHelloID
-	connectionFlow    uint32
 	headerPriority    *http2.PriorityParam
+	settings          map[http2.SettingID]uint32
 	priorities        []http2.Priority
 	pseudoHeaderOrder []string
-	settings          map[http2.SettingID]uint32
 	settingsOrder     []http2.SettingID
+	connectionFlow    uint32
 }
 
 func NewClientProfile(clientHelloId tls.ClientHelloID, settings map[http2.SettingID]uint32, settingsOrder []http2.SettingID, pseudoHeaderOrder []string, connectionFlow uint32, priorities []http2.Priority, headerPriority *http2.PriorityParam) ClientProfile {
