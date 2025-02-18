@@ -111,7 +111,10 @@ var Chrome_117_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 					tls.VersionTLS13,
 					tls.VersionTLS12,
 				}},
-				&tls.ApplicationSettingsExtension{SupportedProtocols: []string{"h2"}},
+				&tls.ApplicationSettingsExtension{
+					CodePoint:          tls.ExtensionALPSOld,
+					SupportedProtocols: []string{"h2"},
+				},
 				&tls.SupportedCurvesExtension{Curves: []tls.CurveID{
 					tls.CurveID(tls.GREASE_PLACEHOLDER),
 					tls.X25519,
@@ -210,7 +213,10 @@ var Chrome_120_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 				&tls.SupportedPointsExtension{SupportedPoints: []byte{
 					tls.PointFormatUncompressed,
 				}},
-				&tls.ApplicationSettingsExtension{SupportedProtocols: []string{"h2"}},
+				&tls.ApplicationSettingsExtension{
+					CodePoint:          tls.ExtensionALPSOld,
+					SupportedProtocols: []string{"h2"},
+				},
 				&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
 					tls.CertCompressionBrotli,
 				}},
@@ -292,7 +298,10 @@ var Chrome_124_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 				&tls.SupportedPointsExtension{SupportedPoints: []byte{
 					tls.PointFormatUncompressed,
 				}},
-				&tls.ApplicationSettingsExtension{SupportedProtocols: []string{"h2"}},
+				&tls.ApplicationSettingsExtension{
+					CodePoint:          tls.ExtensionALPSOld,
+					SupportedProtocols: []string{"h2"},
+				},
 				&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
 					tls.CertCompressionBrotli,
 				}},
