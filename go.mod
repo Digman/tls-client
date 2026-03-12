@@ -6,7 +6,6 @@ toolchain go1.23.3
 
 require (
 	github.com/bogdanfinn/fhttp v0.5.36
-	github.com/bogdanfinn/tls-client v1.8.0
 	github.com/bogdanfinn/utls v1.6.5
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.10.0
