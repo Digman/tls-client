@@ -158,7 +158,7 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 
 	rawConn = rt.bandwidthTracker.TrackConnection(ctx, rawConn)
 
-	conn := tls.UClient(rawConn, tlsConfig, rt.clientHelloId, rt.withRandomTlsExtensionOrder, rt.forceHttp1)
+	conn := tls.UClient(rawConn, tlsConfig, rt.clientHelloId, rt.withRandomTlsExtensionOrder, rt.forceHttp1, false)
 	if err = conn.HandshakeContext(ctx); err != nil {
 		_ = conn.Close()
 
@@ -307,6 +307,58 @@ func (rt *roundTripper) buildHttp1Transport() *http.Transport {
 
 func (rt *roundTripper) dialTLSHTTP2(network, addr string, _ *tls.Config) (net.Conn, error) {
 	return rt.dialTLS(context.Background(), network, addr)
+}
+
+func (rt *roundTripper) dialTLSForWebsocket(ctx context.Context, network, addr string) (net.Conn, error) {
+	if network == "tcp" && rt.disableIPV6 {
+		network = "tcp4"
+	}
+
+	if network == "tcp" && rt.disableIPV4 {
+		network = "tcp6"
+	}
+
+	rawConn, err := rt.dialer.DialContext(ctx, network, addr)
+	if err != nil {
+		return nil, err
+	}
+
+	var host string
+	if host, _, err = net.SplitHostPort(addr); err != nil {
+		host = addr
+	}
+
+	if rt.serverNameOverwrite != "" {
+		host = rt.serverNameOverwrite
+	}
+
+	tlsConfig := &tls.Config{
+		ClientSessionCache: rt.clientSessionCache,
+		ServerName:         host,
+		InsecureSkipVerify: rt.insecureSkipVerify,
+		OmitEmptyPsk:       true,
+	}
+	if rt.transportOptions != nil {
+		tlsConfig.RootCAs = rt.transportOptions.RootCAs
+		tlsConfig.KeyLogWriter = rt.transportOptions.KeyLogWriter
+	}
+
+	rawConn = rt.bandwidthTracker.TrackConnection(ctx, rawConn)
+
+	// Force HTTP/1.1 for WebSocket connections (WebSocket doesn't work over HTTP/2)
+	conn := tls.UClient(rawConn, tlsConfig, rt.clientHelloId, rt.withRandomTlsExtensionOrder, true, false)
+	if err = conn.HandshakeContext(ctx); err != nil {
+		_ = conn.Close()
+		return nil, err
+	}
+
+	err = rt.certificatePinner.Pin(conn, host)
+	if err != nil {
+		_ = conn.Close()
+		return nil, err
+	}
+
+	return conn, nil
 }
 
 func (rt *roundTripper) getDialTLSAddr(req *http.Request) string {

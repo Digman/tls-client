@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/url"
 	"strings"
 	"sync"
@@ -20,6 +21,11 @@ import (
 var defaultRedirectFunc = func(req *http.Request, via []*http.Request) error {
 	return http.ErrUseLastResponse
 }
+
+// TLSDialerFunc is a function that dials a TLS connection to the given address.
+// It's used for WebSocket connections to ensure they use the same TLS fingerprinting
+// as regular HTTP requests.
+type TLSDialerFunc func(ctx context.Context, network, addr string) (net.Conn, error)
 
 type HttpClient interface {
 	GetCookies(u *url.URL) []*http.Cookie
@@ -37,6 +43,8 @@ type HttpClient interface {
 	Post(url, contentType string, body io.Reader) (resp *http.Response, err error)
 
 	GetBandwidthTracker() bandwidth.BandwidthTracker
+	GetDialer() proxy.ContextDialer
+	GetTLSDialer() TLSDialerFunc
 }
 
 // Interface guards are a cheap way to make sure all methods are implemented, this is a static check and does not affect runtime performance.
@@ -47,6 +55,7 @@ type httpClient struct {
 
 	bandwidthTracker bandwidth.BandwidthTracker
 	config           *httpClientConfig
+	dialer           proxy.ContextDialer
 
 	http.Client
 	headerLck sync.Mutex
@@ -87,7 +96,7 @@ func NewHttpClient(logger Logger, options ...HttpClientOption) (HttpClient, erro
 		return nil, err
 	}
 
-	client, bandwidthTracker, clientProfile, err := buildFromConfig(logger, config)
+	client, dialer, bandwidthTracker, clientProfile, err := buildFromConfig(logger, config)
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +121,7 @@ func NewHttpClient(logger Logger, options ...HttpClientOption) (HttpClient, erro
 		config:           config,
 		headerLck:        sync.Mutex{},
 		bandwidthTracker: bandwidthTracker,
+		dialer:           dialer,
 	}, nil
 }
 
@@ -119,14 +129,14 @@ func validateConfig(_ *httpClientConfig) error {
 	return nil
 }
 
-func buildFromConfig(logger Logger, config *httpClientConfig) (*http.Client, bandwidth.BandwidthTracker, profiles.ClientProfile, error) {
+func buildFromConfig(logger Logger, config *httpClientConfig) (*http.Client, proxy.ContextDialer, bandwidth.BandwidthTracker, profiles.ClientProfile, error) {
 	var dialer proxy.ContextDialer
 	dialer = newDirectDialer(config.timeout, config.localAddr, config.dialer)
 
 	if config.proxyUrl != "" && config.proxyDialerFactory == nil {
 		proxyDialer, err := newConnectDialer(config.proxyUrl, config.timeout, config.localAddr, config.dialer, config.connectHeaders, logger)
 		if err != nil {
-			return nil, nil, profiles.ClientProfile{}, err
+			return nil, nil, nil, profiles.ClientProfile{}, err
 		}
 
 		dialer = proxyDialer
@@ -135,7 +145,7 @@ func buildFromConfig(logger Logger, config *httpClientConfig) (*http.Client, ban
 	if config.proxyDialerFactory != nil {
 		proxyDialer, err := config.proxyDialerFactory(config.proxyUrl, config.timeout, config.localAddr, config.connectHeaders, logger)
 		if err != nil {
-			return nil, nil, profiles.ClientProfile{}, err
+			return nil, nil, nil, profiles.ClientProfile{}, err
 		}
 
 		dialer = proxyDialer
@@ -163,7 +173,7 @@ func buildFromConfig(logger Logger, config *httpClientConfig) (*http.Client, ban
 
 	transport, err := newRoundTripper(clientProfile, config.transportOptions, config.serverNameOverwrite, config.insecureSkipVerify, config.withRandomTlsExtensionOrder, config.forceHttp1, config.certificatePins, config.badPinHandler, config.disableIPV6, config.disableIPV4, bandwidthTracker, dialer)
 	if err != nil {
-		return nil, nil, clientProfile, err
+		return nil, nil, nil, clientProfile, err
 	}
 
 	client := &http.Client{
@@ -176,7 +186,7 @@ func buildFromConfig(logger Logger, config *httpClientConfig) (*http.Client, ban
 		client.Jar = config.cookieJar
 	}
 
-	return client, bandwidthTracker, clientProfile, nil
+	return client, dialer, bandwidthTracker, clientProfile, nil
 }
 
 // CloseIdleConnections closes all idle connections of the underlying http client.
@@ -310,6 +320,26 @@ func (c *httpClient) GetCookieJar() http.CookieJar {
 // GetBandwidthTracker returns the bandwidth tracker
 func (c *httpClient) GetBandwidthTracker() bandwidth.BandwidthTracker {
 	return c.bandwidthTracker
+}
+
+// GetDialer returns the dialer used by the client.
+func (c *httpClient) GetDialer() proxy.ContextDialer {
+	return c.dialer
+}
+
+// GetTLSDialer returns a TLS dialer function that uses the same TLS fingerprinting
+// as regular HTTP requests. This is used for WebSocket connections.
+func (c *httpClient) GetTLSDialer() TLSDialerFunc {
+	rt, ok := c.Transport.(*roundTripper)
+	if !ok {
+		return func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return c.dialer.DialContext(ctx, network, addr)
+		}
+	}
+
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return rt.dialTLSForWebsocket(ctx, network, addr)
+	}
 }
 
 // Do issues a given HTTP request and returns the corresponding response.

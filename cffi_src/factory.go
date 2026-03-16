@@ -271,7 +271,7 @@ func getTlsClient(requestInput RequestInput, sessionId string, withSession bool)
 			return nil, fmt.Errorf("can not build http client out of custom tls client information: %w", err)
 		}
 
-		clientProfile = profiles.NewClientProfile(clientHelloId, h2Settings, h2SettingsOrder, pseudoHeaderOrder, connectionFlow, priorityFrames, headerPriority)
+		clientProfile = profiles.NewClientProfile(clientHelloId, h2Settings, h2SettingsOrder, pseudoHeaderOrder, connectionFlow, priorityFrames, headerPriority, 0, false, nil, nil, 0, nil, false)
 	}
 
 	if tlsClientIdentifier != "" {
@@ -391,7 +391,11 @@ func getTlsClient(requestInput RequestInput, sessionId string, withSession bool)
 }
 
 func getCustomTlsClientProfile(customClientDefinition *CustomTlsClient) (tls.ClientHelloID, map[http2.SettingID]uint32, []http2.SettingID, []string, uint32, []http2.Priority, *http2.PriorityParam, error) {
-	specFactory, err := tls_client.GetSpecFactoryFromJa3String(customClientDefinition.Ja3String, customClientDefinition.SupportedSignatureAlgorithms, customClientDefinition.SupportedDelegatedCredentialsAlgorithms, customClientDefinition.SupportedVersions, customClientDefinition.KeyShareCurves, customClientDefinition.ALPNProtocols, customClientDefinition.ALPSProtocols, customClientDefinition.ECHCandidateCipherSuites.Translate(), customClientDefinition.ECHCandidatePayloads, customClientDefinition.CertCompressionAlgo)
+	certCompressionAlgos := customClientDefinition.CertCompressionAlgos
+	if len(certCompressionAlgos) == 0 && customClientDefinition.CertCompressionAlgo != "" {
+		certCompressionAlgos = []string{customClientDefinition.CertCompressionAlgo}
+	}
+	specFactory, err := tls_client.GetSpecFactoryFromJa3String(customClientDefinition.Ja3String, customClientDefinition.SupportedSignatureAlgorithms, customClientDefinition.SupportedDelegatedCredentialsAlgorithms, customClientDefinition.SupportedVersions, customClientDefinition.KeyShareCurves, customClientDefinition.ALPNProtocols, customClientDefinition.ALPSProtocols, customClientDefinition.ECHCandidateCipherSuites.Translate(), customClientDefinition.ECHCandidatePayloads, certCompressionAlgos, customClientDefinition.RecordSizeLimit)
 	if err != nil {
 		return tls.ClientHelloID{}, nil, nil, nil, 0, nil, nil, err
 	}

@@ -455,7 +455,7 @@ var CloudflareCustom = ClientProfile{
 		},
 	},
 
-	// actually the h2 settings are not relevant, because this client does only support http1
+	//actually the h2 settings are not relevant, because this client does only support http1
 	settings: map[http2.SettingID]uint32{
 		http2.SettingHeaderTableSize:      4096,
 		http2.SettingMaxConcurrentStreams: math.MaxUint32,
@@ -747,7 +747,6 @@ var MeshAndroid = ClientProfile{
 						tls.CertCompressionBrotli,
 					}},
 					&tls.ApplicationSettingsExtension{
-						CodePoint:          tls.ExtensionALPSOld,
 						SupportedProtocols: []string{},
 					},
 					&tls.UtlsGREASEExtension{},

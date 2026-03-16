@@ -86,6 +86,8 @@ type RequestInput struct {
 // CustomTlsClient contains custom TLS specifications to construct a client from.
 type CustomTlsClient struct {
 	CertCompressionAlgo                     string                `json:"certCompressionAlgo"`
+	CertCompressionAlgos                    []string              `json:"certCompressionAlgos"`
+	RecordSizeLimit                         uint16                `json:"recordSizeLimit"`
 	ConnectionFlow                          uint32                `json:"connectionFlow"`
 	H2Settings                              map[string]uint32     `json:"h2Settings"`
 	H2SettingsOrder                         []string              `json:"h2SettingsOrder"`

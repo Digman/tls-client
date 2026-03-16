@@ -5,6 +5,20 @@ import (
 	tls "github.com/bogdanfinn/utls"
 )
 
+// newALPSExtension returns the appropriate ALPS extension based on the useNew flag.
+// useNew=true returns ApplicationSettingsExtensionNew (code point 17613),
+// useNew=false returns ApplicationSettingsExtension (code point 17513).
+func newALPSExtension(useNew bool) tls.TLSExtension {
+	if useNew {
+		return &tls.ApplicationSettingsExtensionNew{
+			SupportedProtocols: []string{"h2"},
+		}
+	}
+	return &tls.ApplicationSettingsExtension{
+		SupportedProtocols: []string{"h2"},
+	}
+}
+
 func NewChromeProfile(clientHelloId tls.ClientHelloID) ClientProfile {
 	return ClientProfile{
 		clientHelloId: clientHelloId,
@@ -112,7 +126,6 @@ var Chrome_117_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 					tls.VersionTLS12,
 				}},
 				&tls.ApplicationSettingsExtension{
-					CodePoint:          tls.ExtensionALPSOld,
 					SupportedProtocols: []string{"h2"},
 				},
 				&tls.SupportedCurvesExtension{Curves: []tls.CurveID{
@@ -214,7 +227,6 @@ var Chrome_120_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 					tls.PointFormatUncompressed,
 				}},
 				&tls.ApplicationSettingsExtension{
-					CodePoint:          tls.ExtensionALPSOld,
 					SupportedProtocols: []string{"h2"},
 				},
 				&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
@@ -299,7 +311,6 @@ var Chrome_124_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 					tls.PointFormatUncompressed,
 				}},
 				&tls.ApplicationSettingsExtension{
-					CodePoint:          tls.ExtensionALPSOld,
 					SupportedProtocols: []string{"h2"},
 				},
 				&tls.UtlsCompressCertExtension{Algorithms: []tls.CertCompressionAlgo{
@@ -316,7 +327,7 @@ var Chrome_124_PSK = NewChromeProfileNonStreams(tls.ClientHelloID{
 // Chrome 131-132 使用舊 ALPS 代碼點（17513），Chrome 133+ 使用新 ALPS 代碼點（17613）。
 // 所有版本的 cipher suites、signature algorithms、H2 settings 均相同。
 // Extension 順序由 requests 庫的 WithRandomTLSExtensionOrder() 隨機排列，與真實 Chrome 行為一致。
-func newChromeMLKEMPSK(version string, alpsCodePoint uint16) ClientProfile {
+func newChromeMLKEMPSK(version string, useNewALPS bool) ClientProfile {
 	return ClientProfile{
 		clientHelloId: tls.ClientHelloID{
 			Client:               "Chrome",
@@ -348,10 +359,7 @@ func newChromeMLKEMPSK(version string, alpsCodePoint uint16) ClientProfile {
 					},
 					Extensions: []tls.TLSExtension{
 						&tls.UtlsGREASEExtension{},
-						&tls.ApplicationSettingsExtension{
-							CodePoint:          alpsCodePoint,
-							SupportedProtocols: []string{"h2"},
-						},
+						newALPSExtension(useNewALPS),
 						&tls.ALPNExtension{AlpnProtocols: []string{
 							"h2",
 							"http/1.1",
@@ -430,21 +438,20 @@ func newChromeMLKEMPSK(version string, alpsCodePoint uint16) ClientProfile {
 }
 
 // Chrome_132_PSK Chrome 132 PSK: X25519MLKEM768 + 舊 ALPS 代碼點（131→133 過渡版本）
-var Chrome_132_PSK = newChromeMLKEMPSK("132", tls.ExtensionALPSOld)
+var Chrome_132_PSK = newChromeMLKEMPSK("132", false)
 
 // Chrome 134-145 PSK: X25519MLKEM768 + 新 ALPS 代碼點（與 Chrome 133 相同，由 Chrome 145 真實指紋驗證）
-var Chrome_134_PSK = newChromeMLKEMPSK("134", tls.ExtensionALPS)
-var Chrome_135_PSK = newChromeMLKEMPSK("135", tls.ExtensionALPS)
-var Chrome_136_PSK = newChromeMLKEMPSK("136", tls.ExtensionALPS)
-var Chrome_137_PSK = newChromeMLKEMPSK("137", tls.ExtensionALPS)
-var Chrome_138_PSK = newChromeMLKEMPSK("138", tls.ExtensionALPS)
-var Chrome_139_PSK = newChromeMLKEMPSK("139", tls.ExtensionALPS)
-var Chrome_140_PSK = newChromeMLKEMPSK("140", tls.ExtensionALPS)
-var Chrome_141_PSK = newChromeMLKEMPSK("141", tls.ExtensionALPS)
-var Chrome_142_PSK = newChromeMLKEMPSK("142", tls.ExtensionALPS)
-var Chrome_143_PSK = newChromeMLKEMPSK("143", tls.ExtensionALPS)
-var Chrome_144_PSK = newChromeMLKEMPSK("144", tls.ExtensionALPS)
-var Chrome_145_PSK = newChromeMLKEMPSK("145", tls.ExtensionALPS)
+var Chrome_134_PSK = newChromeMLKEMPSK("134", true)
+var Chrome_135_PSK = newChromeMLKEMPSK("135", true)
+var Chrome_136_PSK = newChromeMLKEMPSK("136", true)
+var Chrome_137_PSK = newChromeMLKEMPSK("137", true)
+var Chrome_138_PSK = newChromeMLKEMPSK("138", true)
+var Chrome_139_PSK = newChromeMLKEMPSK("139", true)
+var Chrome_140_PSK = newChromeMLKEMPSK("140", true)
+var Chrome_141_PSK = newChromeMLKEMPSK("141", true)
+var Chrome_142_PSK = newChromeMLKEMPSK("142", true)
+var Chrome_143_PSK = newChromeMLKEMPSK("143", true)
+var Chrome_145_PSK = newChromeMLKEMPSK("145", true)
 
 // Safari_26 基於真實 macOS Safari 26.3 指紋數據（Version/26.3 Safari/605.1.15）。
 // 相比 Safari 18.5 的主要變化：
