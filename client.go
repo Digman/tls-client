@@ -227,19 +227,16 @@ func (c *httpClient) applyFollowRedirect() {
 //
 //	"http://user:pass@host:port"
 func (c *httpClient) SetProxy(proxyUrl string) error {
-	currentProxy := c.config.proxyUrl
-
 	c.logger.Debug("set proxy from %s to %s", c.config.proxyUrl, proxyUrl)
-	c.config.proxyUrl = proxyUrl
 
-	err := c.applyProxy()
+	dialer, transport, err := c.buildProxyState(proxyUrl)
 	if err != nil {
-		c.logger.Error("failed to apply new proxy. rolling back to previous used proxy: %w", err)
-		c.config.proxyUrl = currentProxy
-
-		return c.applyProxy()
+		return err
 	}
 
+	c.config.proxyUrl = proxyUrl
+	c.dialer = dialer
+	c.Transport = transport
 	return nil
 }
 
@@ -248,16 +245,15 @@ func (c *httpClient) GetProxy() string {
 	return c.config.proxyUrl
 }
 
-func (c *httpClient) applyProxy() error {
-	var dialer proxy.ContextDialer
-	dialer = proxy.Direct
+func (c *httpClient) buildProxyState(proxyUrl string) (proxy.ContextDialer, http.RoundTripper, error) {
+	dialer := newDirectDialer(c.config.timeout, c.config.localAddr, c.config.dialer)
 
-	if c.config.proxyUrl != "" && c.config.proxyDialerFactory == nil {
-		c.logger.Debug("proxy url %s supplied - using proxy connect dialer", c.config.proxyUrl)
-		proxyDialer, err := newConnectDialer(c.config.proxyUrl, c.config.timeout, c.config.localAddr, c.config.dialer, c.config.connectHeaders, c.logger)
+	if proxyUrl != "" && c.config.proxyDialerFactory == nil {
+		c.logger.Debug("proxy url %s supplied - using proxy connect dialer", proxyUrl)
+		proxyDialer, err := newConnectDialer(proxyUrl, c.config.timeout, c.config.localAddr, c.config.dialer, c.config.connectHeaders, c.logger)
 		if err != nil {
 			c.logger.Error("failed to create proxy connect dialer: %s", err.Error())
-			return err
+			return nil, nil, err
 		}
 
 		dialer = proxyDialer
@@ -265,10 +261,10 @@ func (c *httpClient) applyProxy() error {
 
 	if c.config.proxyDialerFactory != nil {
 		c.logger.Debug("using custom proxy connect dialer")
-		proxyDialer, err := c.config.proxyDialerFactory(c.config.proxyUrl, c.config.timeout, c.config.localAddr, c.config.connectHeaders, c.logger)
+		proxyDialer, err := c.config.proxyDialerFactory(proxyUrl, c.config.timeout, c.config.localAddr, c.config.connectHeaders, c.logger)
 		if err != nil {
 			c.logger.Error("failed to create proxy connect dialer: %s", err.Error())
-			return err
+			return nil, nil, err
 		}
 
 		dialer = proxyDialer
@@ -276,12 +272,9 @@ func (c *httpClient) applyProxy() error {
 
 	transport, err := newRoundTripper(c.config.clientProfile, c.config.transportOptions, c.config.serverNameOverwrite, c.config.insecureSkipVerify, c.config.withRandomTlsExtensionOrder, c.config.forceHttp1, c.config.certificatePins, c.config.badPinHandler, c.config.disableIPV6, c.config.disableIPV4, c.bandwidthTracker, dialer)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-
-	c.Transport = transport
-
-	return nil
+	return dialer, transport, nil
 }
 
 // GetCookies returns the cookies in the client's cookie jar for a given URL.
