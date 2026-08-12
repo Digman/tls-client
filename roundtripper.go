@@ -168,6 +168,7 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 	err = rt.certificatePinner.Pin(conn, host)
 
 	if err != nil {
+		_ = conn.Close()
 		return nil, err
 	}
 
