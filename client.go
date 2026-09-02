@@ -96,13 +96,6 @@ func NewHttpClient(logger Logger, options ...HttpClientOption) (HttpClient, erro
 		return nil, err
 	}
 
-	client, dialer, bandwidthTracker, clientProfile, err := buildFromConfig(logger, config)
-	if err != nil {
-		return nil, err
-	}
-
-	config.clientProfile = clientProfile
-
 	if config.debug {
 		if logger == nil {
 			logger = NewLogger()
@@ -114,6 +107,13 @@ func NewHttpClient(logger Logger, options ...HttpClientOption) (HttpClient, erro
 	if logger == nil {
 		logger = NewNoopLogger()
 	}
+
+	client, dialer, bandwidthTracker, clientProfile, err := buildFromConfig(logger, config)
+	if err != nil {
+		return nil, err
+	}
+
+	config.clientProfile = clientProfile
 
 	return &httpClient{
 		Client:           *client,
