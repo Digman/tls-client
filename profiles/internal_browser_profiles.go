@@ -13,6 +13,27 @@ func newGREASEECH(payloadLens ...uint16) *tls.GREASEEncryptedClientHelloExtensio
 	return ech
 }
 
+func cloneChromeProfile(base ClientProfile, version string, echPayloadLens ...uint16) ClientProfile {
+	profile := base
+	clientHelloID := base.clientHelloId
+	clientHelloID.Version = version
+	clientHelloID.SpecFactory = func() (tls.ClientHelloSpec, error) {
+		spec, err := base.GetClientHelloSpec()
+		if err != nil {
+			return tls.ClientHelloSpec{}, err
+		}
+
+		for i, extension := range spec.Extensions {
+			if _, ok := extension.(*tls.GREASEEncryptedClientHelloExtension); ok {
+				spec.Extensions[i] = newGREASEECH(echPayloadLens...)
+			}
+		}
+		return spec, nil
+	}
+	profile.clientHelloId = clientHelloID
+	return profile
+}
+
 var Chrome_152_PSK = ClientProfile{
 	clientHelloId: tls.ClientHelloID{
 		Client:               "Chrome",
@@ -356,6 +377,11 @@ var Chrome_152 = ClientProfile{
 	},
 	connectionFlow: 15663105,
 }
+
+var (
+	Chrome_153_PSK = cloneChromeProfile(Chrome_152_PSK, "153_PSK", 128, 160, 192, 224)
+	Chrome_153     = cloneChromeProfile(Chrome_152, "153", 128, 160, 192, 224)
+)
 
 var Chrome_150 = ClientProfile{
 	clientHelloId: tls.ClientHelloID{

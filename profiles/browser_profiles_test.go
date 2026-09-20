@@ -93,6 +93,51 @@ func TestChrome152GREASEECHUsesConfiguredPayloadLens(t *testing.T) {
 	}
 }
 
+func TestChrome153Profiles(t *testing.T) {
+	tests := []struct {
+		name    string
+		profile ClientProfile
+		version string
+	}{
+		{name: "chrome 153", profile: Chrome_153, version: "153"},
+		{name: "chrome 153 psk", profile: Chrome_153_PSK, version: "153_PSK"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.profile.GetClientHelloId().Version; got != tt.version {
+				t.Fatalf("ClientHello version = %q, want %q", got, tt.version)
+			}
+
+			spec, err := tt.profile.GetClientHelloSpec()
+			if err != nil {
+				t.Fatalf("GetClientHelloSpec() error = %v", err)
+			}
+
+			found := false
+			for _, extension := range spec.Extensions {
+				ech, ok := extension.(*tls.GREASEEncryptedClientHelloExtension)
+				if !ok {
+					continue
+				}
+				found = true
+				want := []uint16{128, 160, 192, 224}
+				if len(ech.CandidatePayloadLens) != len(want) {
+					t.Fatalf("CandidatePayloadLens = %v, want %v", ech.CandidatePayloadLens, want)
+				}
+				for i := range want {
+					if ech.CandidatePayloadLens[i] != want[i] {
+						t.Fatalf("CandidatePayloadLens = %v, want %v", ech.CandidatePayloadLens, want)
+					}
+				}
+			}
+			if !found {
+				t.Fatal("Chrome 153 profile does not include an ECH GREASE extension")
+			}
+		})
+	}
+}
+
 func TestChrome150ProfileDoesNotIncludeChrome152Extensions(t *testing.T) {
 	spec, err := Chrome_150.GetClientHelloSpec()
 	if err != nil {
