@@ -11,6 +11,7 @@ import (
 
 	"github.com/Digman/tls-client/bandwidth"
 	"github.com/Digman/tls-client/profiles"
+	fhttp "github.com/bogdanfinn/fhttp"
 )
 
 func TestDialTLSClosesConnectionWhenPinFails(t *testing.T) {
@@ -27,6 +28,7 @@ func TestDialTLSClosesConnectionWhenPinFails(t *testing.T) {
 	}
 
 	dialer := &closeTrackingDialer{}
+	var reported PinMismatchInfo
 	transport, err := newRoundTripper(
 		profiles.Chrome_105,
 		nil,
@@ -35,7 +37,13 @@ func TestDialTLSClosesConnectionWhenPinFails(t *testing.T) {
 		false,
 		true,
 		map[string][]string{host: {"invalid-pin"}},
-		nil,
+		func(req *fhttp.Request) {
+			var ok bool
+			reported, ok = PinMismatchInfoFromRequest(req)
+			if !ok {
+				t.Fatalf("pin mismatch diagnostics missing from callback request")
+			}
+		},
 		false,
 		false,
 		bandwidth.NewNopeTracker(),
@@ -53,8 +61,33 @@ func TestDialTLSClosesConnectionWhenPinFails(t *testing.T) {
 	if !errors.Is(err, ErrBadPinDetected) {
 		t.Fatalf("dialTLS() error = %v, want %v", err, ErrBadPinDetected)
 	}
+	var mismatchErr *pinMismatchError
+	if !errors.As(err, &mismatchErr) {
+		t.Fatal("dialTLS() error did not retain pin mismatch details")
+	}
+	if mismatchErr.Info.Host != host {
+		t.Fatalf("pin mismatch host = %q, want %q", mismatchErr.Info.Host, host)
+	}
+	if len(mismatchErr.Info.ExpectedPins) != 1 || mismatchErr.Info.ExpectedPins[0] != "invalid-pin" {
+		t.Fatalf("unexpected expected pins: %#v", mismatchErr.Info.ExpectedPins)
+	}
+	if len(mismatchErr.Info.Certificates) == 0 {
+		t.Fatal("pin mismatch details did not include observed certificates")
+	}
 	if !dialer.closed.Load() {
 		t.Fatal("connection was not closed after pin validation failed")
+	}
+
+	request, err := fhttp.NewRequest("GET", "https://"+addr, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, roundTripErr := transport.RoundTrip(request)
+	if roundTripErr != ErrBadPinDetected {
+		t.Fatalf("RoundTrip() error = %v, want sentinel %v", roundTripErr, ErrBadPinDetected)
+	}
+	if reported.Host != host || len(reported.Certificates) == 0 {
+		t.Fatal("RoundTrip did not invoke detailed pin mismatch handler")
 	}
 }
 

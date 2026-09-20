@@ -1,10 +1,13 @@
 package tls_client
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	http "github.com/bogdanfinn/fhttp"
 	tls "github.com/bogdanfinn/utls"
@@ -16,6 +19,48 @@ var DefaultBadPinHandler = func(req *http.Request) {
 }
 
 var ErrBadPinDetected = errors.New("bad ssl pin detected")
+
+var pinMismatchInfoKey struct{}
+
+// PinMismatchInfo describes the expected and observed certificate pins for a failed connection.
+type PinMismatchInfo struct {
+	Host         string               `json:"host"`
+	ExpectedPins []string             `json:"expected_pins"`
+	Certificates []CertificateSummary `json:"certificates"`
+}
+
+// CertificateSummary contains non-sensitive certificate metadata suitable for diagnostics.
+type CertificateSummary struct {
+	SPKIPin    string `json:"spki_pin"`
+	CertSHA256 string `json:"cert_sha256"`
+	Subject    string `json:"subject"`
+	Issuer     string `json:"issuer"`
+	Serial     string `json:"serial"`
+	NotBefore  string `json:"not_before"`
+	NotAfter   string `json:"not_after"`
+}
+
+type pinMismatchError struct {
+	Info PinMismatchInfo
+}
+
+func (e *pinMismatchError) Error() string {
+	return ErrBadPinDetected.Error()
+}
+
+func (e *pinMismatchError) Unwrap() error {
+	return ErrBadPinDetected
+}
+
+// PinMismatchInfoFromRequest returns diagnostics attached to the request passed
+// to the legacy BadPinHandler after a certificate pin mismatch.
+func PinMismatchInfoFromRequest(req *http.Request) (PinMismatchInfo, bool) {
+	if req == nil {
+		return PinMismatchInfo{}, false
+	}
+	info, ok := req.Context().Value(pinMismatchInfoKey).(PinMismatchInfo)
+	return info, ok
+}
 
 var certificatePinStorage = hpkp.NewMemStorage()
 
@@ -83,7 +128,8 @@ func (cp *certificatePinner) Pin(conn *tls.UConn, host string) error {
 		return nil
 	}
 
-	for _, peerCert := range conn.ConnectionState().PeerCertificates {
+	peerCertificates := conn.ConnectionState().PeerCertificates
+	for _, peerCert := range peerCertificates {
 		peerPin := hpkp.Fingerprint(peerCert)
 
 		if pinnedHost.Matches(peerPin) {
@@ -93,7 +139,28 @@ func (cp *certificatePinner) Pin(conn *tls.UConn, host string) error {
 	}
 
 	if !validPin {
-		return ErrBadPinDetected
+		info := PinMismatchInfo{
+			Host:         host,
+			ExpectedPins: append([]string(nil), pinnedHost.Sha256Pins...),
+		}
+		for _, cert := range peerCertificates {
+			spkiPin := hpkp.Fingerprint(cert)
+			certDigest := sha256.Sum256(cert.Raw)
+			serial := ""
+			if cert.SerialNumber != nil {
+				serial = cert.SerialNumber.String()
+			}
+			info.Certificates = append(info.Certificates, CertificateSummary{
+				SPKIPin:    spkiPin,
+				CertSHA256: hex.EncodeToString(certDigest[:]),
+				Subject:    cert.Subject.String(),
+				Issuer:     cert.Issuer.String(),
+				Serial:     serial,
+				NotBefore:  cert.NotBefore.UTC().Format(time.RFC3339),
+				NotAfter:   cert.NotAfter.UTC().Format(time.RFC3339),
+			})
+		}
+		return &pinMismatchError{Info: info}
 	}
 
 	return nil

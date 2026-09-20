@@ -79,8 +79,18 @@ func (rt *roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err := rt.getTransport(req, addr); err != nil {
 			rt.cachedTransportsLck.Unlock()
 
-			if errors.Is(err, ErrBadPinDetected) && rt.badPinHandlerFunc != nil {
-				rt.badPinHandlerFunc(req)
+			if errors.Is(err, ErrBadPinDetected) {
+				var mismatchErr *pinMismatchError
+				if rt.badPinHandlerFunc != nil {
+					callbackReq := req
+					if errors.As(err, &mismatchErr) {
+						callbackReq = req.WithContext(context.WithValue(req.Context(), pinMismatchInfoKey, mismatchErr.Info))
+					}
+					rt.badPinHandlerFunc(callbackReq)
+				}
+				// Keep the historical public error identity; details are available
+				// only through the legacy callback request context.
+				return nil, ErrBadPinDetected
 			}
 
 			return nil, err
