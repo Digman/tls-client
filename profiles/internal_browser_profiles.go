@@ -34,6 +34,33 @@ func cloneChromeProfile(base ClientProfile, version string, echPayloadLens ...ui
 	return profile
 }
 
+func cloneChromeProfileWithServerPadding(base ClientProfile, version string, echPayloadLens ...uint16) ClientProfile {
+	profile := cloneChromeProfile(base, version, echPayloadLens...)
+	baseSpecFactory := profile.clientHelloId.SpecFactory
+	clientHelloID := profile.clientHelloId
+	clientHelloID.SpecFactory = func() (tls.ClientHelloSpec, error) {
+		spec, err := baseSpecFactory()
+		if err != nil {
+			return tls.ClientHelloSpec{}, err
+		}
+
+		// Chrome 154 的 kAddTLSServerHandshakePadding variation 實測請求 0 位元組。
+		serverPadding := &tls.GenericExtension{Id: 0x12e0, Data: []byte{0x00, 0x00}}
+		for i, extension := range spec.Extensions {
+			if _, ok := extension.(*tls.UtlsPreSharedKeyExtension); ok {
+				spec.Extensions = append(spec.Extensions, nil)
+				copy(spec.Extensions[i+1:], spec.Extensions[i:])
+				spec.Extensions[i] = serverPadding
+				return spec, nil
+			}
+		}
+		spec.Extensions = append(spec.Extensions, serverPadding)
+		return spec, nil
+	}
+	profile.clientHelloId = clientHelloID
+	return profile
+}
+
 var Chrome_152_PSK = ClientProfile{
 	clientHelloId: tls.ClientHelloID{
 		Client:               "Chrome",
@@ -381,6 +408,14 @@ var Chrome_152 = ClientProfile{
 var (
 	Chrome_153_PSK = cloneChromeProfile(Chrome_152_PSK, "153_PSK", 128, 160, 192, 224)
 	Chrome_153     = cloneChromeProfile(Chrome_152, "153", 128, 160, 192, 224)
+	Chrome_154_PSK = cloneChromeProfile(Chrome_153_PSK, "154_PSK", 128, 160, 192, 224)
+	Chrome_154     = cloneChromeProfile(Chrome_153, "154", 128, 160, 192, 224)
+	// Chrome 154 ServerPadding profiles reproduce the Finch variation observed
+	// in the official Chrome for Testing capture.
+	Chrome_154_ServerPadding_PSK = cloneChromeProfileWithServerPadding(Chrome_153_PSK, "154_ServerPadding_PSK", 128, 160, 192, 224)
+	Chrome_154_ServerPadding     = cloneChromeProfileWithServerPadding(Chrome_153, "154_ServerPadding", 128, 160, 192, 224)
+	Chrome_155_PSK               = cloneChromeProfile(Chrome_153_PSK, "155_PSK", 128, 160, 192, 224)
+	Chrome_155                   = cloneChromeProfile(Chrome_153, "155", 128, 160, 192, 224)
 )
 
 var Chrome_150 = ClientProfile{

@@ -1,6 +1,7 @@
 package profiles
 
 import (
+	"bytes"
 	"testing"
 
 	tls "github.com/bogdanfinn/utls"
@@ -93,14 +94,21 @@ func TestChrome152GREASEECHUsesConfiguredPayloadLens(t *testing.T) {
 	}
 }
 
-func TestChrome153Profiles(t *testing.T) {
+func TestChrome153To155Profiles(t *testing.T) {
 	tests := []struct {
-		name    string
-		profile ClientProfile
-		version string
+		name              string
+		profile           ClientProfile
+		version           string
+		wantServerPadding bool
 	}{
 		{name: "chrome 153", profile: Chrome_153, version: "153"},
 		{name: "chrome 153 psk", profile: Chrome_153_PSK, version: "153_PSK"},
+		{name: "chrome 154", profile: Chrome_154, version: "154"},
+		{name: "chrome 154 psk", profile: Chrome_154_PSK, version: "154_PSK"},
+		{name: "chrome 154 server padding", profile: Chrome_154_ServerPadding, version: "154_ServerPadding", wantServerPadding: true},
+		{name: "chrome 154 server padding psk", profile: Chrome_154_ServerPadding_PSK, version: "154_ServerPadding_PSK", wantServerPadding: true},
+		{name: "chrome 155", profile: Chrome_155, version: "155"},
+		{name: "chrome 155 psk", profile: Chrome_155_PSK, version: "155_PSK"},
 	}
 
 	for _, tt := range tests {
@@ -115,7 +123,14 @@ func TestChrome153Profiles(t *testing.T) {
 			}
 
 			found := false
+			serverPadding := false
 			for _, extension := range spec.Extensions {
+				if generic, ok := extension.(*tls.GenericExtension); ok && generic.Id == 0x12e0 {
+					serverPadding = true
+					if !bytes.Equal(generic.Data, []byte{0x00, 0x00}) {
+						t.Fatalf("server padding data = %x, want 0000", generic.Data)
+					}
+				}
 				ech, ok := extension.(*tls.GREASEEncryptedClientHelloExtension)
 				if !ok {
 					continue
@@ -132,7 +147,10 @@ func TestChrome153Profiles(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Fatal("Chrome 153 profile does not include an ECH GREASE extension")
+				t.Fatalf("%s profile does not include an ECH GREASE extension", tt.name)
+			}
+			if serverPadding != tt.wantServerPadding {
+				t.Fatalf("server padding extension present = %v, want %v", serverPadding, tt.wantServerPadding)
 			}
 		})
 	}
